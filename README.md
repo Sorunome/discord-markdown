@@ -36,7 +36,9 @@ toHTML('This **is** a __test__', options);
   * `emoji`: (`animated`: Boolean, `name`: String, `id`: Number) emojis ":emote":
   * `everyone`: () Everyone mention "@everyone"
   * `here`: () Here mention "@here"
+  * `spoiler`: (`content`: String) Customize how the spoiler HTML will look like
 * `cssModuleNames`: Object, maps CSS class names to CSS module class names
+* `noExtraSpanTags`: Boolean (default: false), if it is true it disables the adding of extra `<span>`-tags around discord stuffs
 
 ### Mention and Emoji Handling
 
