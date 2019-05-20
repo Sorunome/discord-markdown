@@ -106,3 +106,9 @@ test('css module support', () => {
 	expect(markdown.toHTML('Hey @everyone check this out!'))
 		.toBe('Hey <span class="d-mention d-user">@everyone</span> check this out!');
 });
+
+test('support to not use span tags', () => {
+	expect(markdown.toHTML('Hey @everyone check this out!', {
+		noExtraSpanTags: true
+	})).toBe('Hey @everyone check this out!');
+})

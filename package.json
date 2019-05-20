@@ -22,10 +22,10 @@
 	},
 	"dependencies": {
 		"highlight.js": "^9.13.1",
-		"simple-markdown": "^0.4.2"
+		"simple-markdown": "^0.4.4"
 	},
 	"devDependencies": {
 		"eslint": "^5.10.0",
-		"jest": "^23.6.0"
+		"jest": "^24.8.0"
 	}
 }

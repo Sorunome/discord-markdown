@@ -72,6 +72,17 @@ test('here mentioning', () => {
 	})).toBe('Hey <span class="d-mention d-user">++here++</span>!');
 });
 
+test('custom spoiler parsing', () => {
+	expect(markdown.toHTML('this is a ||spoiler||', {
+		discordCallback: {
+			spoiler: node => {
+				return '++'+node.content+'++';
+			}
+		},
+		noExtraSpanTags: true
+	})).toBe('this is a ++spoiler++');
+});
+
 test('don\'t parse stuff in code blocks', () => {
 	expect(markdown.toHTML('`<@1234>`'))
 		.toBe('<code>&lt;@1234&gt;</code>');

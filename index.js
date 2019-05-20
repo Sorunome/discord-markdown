@@ -10,7 +10,7 @@ function htmlTag(tagName, content, attributes, isClosed = true, state = { }) {
 	if (!attributes)
 		attributes = { };
 
-	if (attributes.class && state.cssModuleNames)
+	if (attributes.class)
 		attributes.class = attributes.class.split(' ').map(cl => state.cssModuleNames[cl] || cl).join(' ');
 
 	let attributeString = '';
@@ -27,6 +27,12 @@ function htmlTag(tagName, content, attributes, isClosed = true, state = { }) {
 	return unclosedTag;
 }
 markdown.htmlTag = htmlTag;
+
+function htmlDiscordTag(content, attributes, state) {
+	if (state.noExtraSpanTags)
+		return content;
+	return htmlTag('span', content, attributes, state);
+}
 
 const rules = {
 	codeBlock: Object.assign({ }, markdown.defaultRules.codeBlock, {
@@ -117,7 +123,7 @@ const rules = {
 			};
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', output(node.content, state), { class: 'd-spoiler' }, state);
+			return htmlDiscordTag(state.discordCallbacks.spoiler({ content: output(node.content, state) }), { class: 'd-spoiler' }, state);
 		}
 	}
 };
@@ -128,10 +134,9 @@ const discordCallbackDefaults = {
 	role: node => '&' + node.id,
 	emoji: node => ':' + markdown.sanitizeText(node.name) + ':',
 	everyone: () => '@everyone',
-	here: () => '@here'
+	here: () => '@here',
+	spoiler: node => node.content
 };
-
-let discordCallback = discordCallbackDefaults;
 
 const rulesDiscord = {
 	discordUser: {
@@ -143,7 +148,7 @@ const rulesDiscord = {
 			};
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.user(node), { class: 'd-mention d-user' }, state);
+			return htmlDiscordTag(state.discordCallbacks.user(node), { class: 'd-mention d-user' }, state);
 		}
 	},
 	discordChannel: {
@@ -155,7 +160,7 @@ const rulesDiscord = {
 			};
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.channel(node), { class: 'd-mention d-channel' }, state);
+			return htmlDiscordTag(state.discordCallbacks.channel(node), { class: 'd-mention d-channel' }, state);
 		}
 	},
 	discordRole: {
@@ -167,7 +172,7 @@ const rulesDiscord = {
 			};
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.role(node), { class: 'd-mention d-role' }, state);
+			return htmlDiscordTag(state.discordCallbacks.role(node), { class: 'd-mention d-role' }, state);
 		}
 	},
 	discordEmoji: {
@@ -181,7 +186,7 @@ const rulesDiscord = {
 			};
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.emoji(node), { class: `d-emoji${node.animated ? ' d-emoji-animated' : ''}` }, state);
+			return htmlDiscordTag(state.discordCallbacks.emoji(node), { class: `d-emoji${node.animated ? ' d-emoji-animated' : ''}` }, state);
 		}
 	},
 	discordEveryone: {
@@ -191,7 +196,7 @@ const rulesDiscord = {
 			return { };
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.everyone(node), { class: 'd-mention d-user' }, state);
+			return htmlDiscordTag(state.discordCallbacks.everyone(node), { class: 'd-mention d-user' }, state);
 		}
 	},
 	discordHere: {
@@ -201,7 +206,7 @@ const rulesDiscord = {
 			return { };
 		},
 		html: function(node, output, state) {
-			return htmlTag('span', discordCallback.here(node), { class: 'd-mention d-user' }, state);
+			return htmlDiscordTag(state.discordCallbacks.here(node), { class: 'd-mention d-user' }, state);
 		}
 	}
 };
@@ -241,13 +246,15 @@ const htmlOutputEmbed = markdown.htmlFor(markdown.ruleOutput(rulesEmbed, 'html')
  * @param {Object} [options.discordCallback] Provide custom handling for mentions and emojis
  * @param {Object} [options.cssModuleNames] An object mapping css classes to css module classes
  */
-function toHTML(source, options) {
-	options = Object.assign({
+function toHTML(source, ops) {
+	const options = Object.assign({
 		embed: false,
 		escapeHTML: true,
 		discordOnly: false,
-		discordCallback: { }
-	}, options || { });
+		discordCallback: { },
+		cssModuleNames: { },
+		noExtraSpanTags: false,
+	}, ops || { });
 
 	let _parser = parser;
 	let _htmlOutput = htmlOutput;
@@ -259,13 +266,12 @@ function toHTML(source, options) {
 		_htmlOutput = htmlOutputEmbed;
 	}
 
-	// TODO: Move into state
-	discordCallback = Object.assign({ }, discordCallbackDefaults, options.discordCallback);
-
 	const state = {
 		inline: true,
 		escapeHTML: options.escapeHTML,
-		cssModuleNames: options.cssModuleNames || null
+		cssModuleNames: options.cssModuleNames,
+		discordCallbacks: Object.assign({ }, discordCallbackDefaults, options.discordCallback),
+		noExtraSpanTags: options.noExtraSpanTags
 	};
 
 	return _htmlOutput(_parser(source, state), state);
