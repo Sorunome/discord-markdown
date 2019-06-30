@@ -113,19 +113,7 @@ const rules = {
 	},
 	br: Object.assign({ }, markdown.defaultRules.br, {
 		match: markdown.anyScopeRegex(/^\n/),
-	}),
-	spoiler: {
-		order: 0,
-		match: source => /^\|\|((?:.|\n)+?)\|\|/.exec(source),
-		parse: function(capture, parse, state) {
-			return {
-				content: parse(capture[1], state)
-			};
-		},
-		html: function(node, output, state) {
-			return htmlDiscordTag(state.discordCallbacks.spoiler({ content: output(node.content, state) }), { class: 'd-spoiler' }, state);
-		}
-	}
+	})
 };
 
 const discordCallbackDefaults = {
@@ -207,6 +195,18 @@ const rulesDiscord = {
 		},
 		html: function(node, output, state) {
 			return htmlDiscordTag(state.discordCallbacks.here(node), { class: 'd-mention d-user' }, state);
+		}
+	},
+	spoiler: {
+		order: 0,
+		match: source => /^\|\|((?:.|\n)+?)\|\|/.exec(source),
+		parse: function(capture, parse, state) {
+			return {
+				content: parse(capture[1], state)
+			};
+		},
+		html: function(node, output, state) {
+			return htmlDiscordTag(state.discordCallbacks.spoiler({ content: output(node.content, state) }), { class: 'd-spoiler' }, state);
 		}
 	}
 };
