@@ -65,7 +65,7 @@ test('Fenced code blocks on one line', () => {
 
 test('Escaped marks', () => {
 	expect(markdown.toHTML('Code: \\`1 + 1` = 2`'))
-		.toBe('Code: `1 + 1<code>= 2</code>');
+		.toBe('Code: `1 + 1<code> = 2</code>');
 });
 
 test('Multiline', () => {

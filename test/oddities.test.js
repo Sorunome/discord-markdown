@@ -2,7 +2,7 @@ const markdown = require('../index');
 
 test('Unmatched mark', () => {
 	expect(markdown.toHTML('`Inline `code` with extra marker'))
-		.toBe('<code>Inline</code>code` with extra marker');
+		.toBe('<code>Inline </code>code` with extra marker');
 });
 
 test('* next to space', () => {
