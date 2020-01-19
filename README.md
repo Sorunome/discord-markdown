@@ -39,6 +39,7 @@ toHTML('This **is** a __test__', options);
   * `spoiler`: (`content`: String) Customize how the spoiler HTML will look like
 * `cssModuleNames`: Object, maps CSS class names to CSS module class names
 * `noExtraSpanTags`: Boolean (default: false), if it is true it disables the adding of extra `<span>`-tags around discord stuffs
+* `noHighlightCode`: Boolean (default: false), if it is true it disables rendering with highlight.js
 
 ### Mention and Emoji Handling
 
