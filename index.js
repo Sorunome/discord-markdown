@@ -37,7 +37,7 @@ function htmlDiscordTag(content, attributes, state) {
 const rules = {
 	blockQuote: Object.assign({}, markdown.defaultRules.blockQuote, {
 		match: function(source, state, prevSource) {
-			return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]+(\n *> [^\n]+)*\n?)/.exec(source);
+			return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]*(\n *> [^\n]*)*\n?)/.exec(source);
 		},
 		parse: function(capture, parse, state) {
 			const all = capture[0];
@@ -119,7 +119,9 @@ const rules = {
 	strike: Object.assign({ }, markdown.defaultRules.del, {
 		match: markdown.inlineRegex(/^~~([\s\S]+?)~~(?!_)/),
 	}),
-	inlineCode: markdown.defaultRules.inlineCode,
+	inlineCode: Object.assign({ }, markdown.defaultRules.inlineCode {
+		match: source => source = source.trimEnd(), markdown.defaultRules.inlineCode.match.regex.exec(source)
+	}),
 	text: Object.assign({ }, markdown.defaultRules.text, {
 		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
 		html: function(node, output, state) {

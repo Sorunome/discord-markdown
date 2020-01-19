@@ -78,12 +78,16 @@ test('Multiline', () => {
 test('Block quotes', () => {
 	expect(markdown.toHTML('> text > here'))
 		.toBe('<blockquote>text &gt; here</blockquote>');
+	expect(markdown.toHTML('> text\nhere'))
+		.toBe('<blockquote>text<br></blockquote>here');
 	expect(markdown.toHTML('>text'))
 		.toBe('&gt;text');
 	expect(markdown.toHTML('outside\n>>> inside\ntext\n> here\ndoes not end'))
 		.toBe('outside<br><blockquote>inside<br>text<br>&gt; here<br>does not end</blockquote>');
 	expect(markdown.toHTML('>>> test\n```js\ncode```'))
 		.toBe('<blockquote>test<br><pre><code class="hljs js">code</code></pre></blockquote>');
+	expect(markdown.toHTML('> text\n> \n> here'))
+		.toBe('<blockquote>text<br><br>here</blockquote>');
 });
 
 test('don\'t drop arms', () => {
