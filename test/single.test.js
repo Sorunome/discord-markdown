@@ -50,17 +50,27 @@ test('Converts links to <a> links', () => {
 
 test('Fence normal code blocks', () => {
 	expect(markdown.toHTML('text\n```\ncode\nblock\n```\nmore text'))
-		.toBe('text<br><pre><code class="hljs">code\nblock</code></pre><br>more text');
+		.toBe('text<br><pre><code>code\nblock</code></pre><br>more text');
 });
 
 test('Fenced code blocks with hljs', () => {
 	expect(markdown.toHTML('```js\nconst one = 1;\nconsole.log(one);\n```'))
-		.toBe('<pre><code class="hljs js"><span class="hljs-keyword">const</span> one = <span class="hljs-number">1</span>;\n<span class="hljs-built_in">console</span>.log(one);</code></pre>');
+		.toBe('<pre><code class="hljs language-js"><span class="hljs-keyword">const</span> one = <span class="hljs-number">1</span>;\n<span class="hljs-built_in">console</span>.log(one);</code></pre>');
 });
 
 test('Fenced code blocks on one line', () => {
 	expect(markdown.toHTML('`test`\n\n```test```'))
-		.toBe('<code>test</code><br><br><pre><code class="hljs">test</code></pre>');
+		.toBe('<code>test</code><br><br><pre><code>test</code></pre>');
+});
+
+test('HTML-escape fenced code blocks', () => {
+	expect(markdown.toHTML('`test`\n\n```<>```'))
+		.toBe('<code>test</code><br><br><pre><code>&lt;&gt;</code></pre>');
+});
+
+test('Fence code blocks but ignore hljs if disabled', () => {
+	expect(markdown.toHTML('```js\nconst one = 1;\nconsole.log(one);\n```', { noHighlightCode: true }))
+		.toBe('<pre><code class="language-js">const one = 1;\nconsole.log(one);</code></pre>');
 });
 
 test('Escaped marks', () => {
@@ -85,7 +95,7 @@ test('Block quotes', () => {
 	expect(markdown.toHTML('outside\n>>> inside\ntext\n> here\ndoes not end'))
 		.toBe('outside<br><blockquote>inside<br>text<br>&gt; here<br>does not end</blockquote>');
 	expect(markdown.toHTML('>>> test\n```js\ncode```'))
-		.toBe('<blockquote>test<br><pre><code class="hljs js">code</code></pre></blockquote>');
+		.toBe('<blockquote>test<br><pre><code class="hljs language-js">code</code></pre></blockquote>');
 	expect(markdown.toHTML('> text\n> \n> here'))
 		.toBe('<blockquote>text<br><br>here</blockquote>');
 });

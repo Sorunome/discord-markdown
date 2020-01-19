@@ -42,7 +42,7 @@ test('no undserscore italic in one word', () => {
 
 test('Codeblocks should work with ini', () => {
 	expect(markdown.toHTML('```ini\n[01] asdasd\n```'))
-		.toContain('hljs ini');
+		.toContain('hljs language-ini');
 });
 
 test('Codeblocks should work with css modules', () => {

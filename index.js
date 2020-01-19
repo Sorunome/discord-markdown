@@ -1,5 +1,6 @@
 const markdown = require('simple-markdown');
 const highlight = require('highlight.js');
+const escapeHtml = require('escape-html');
 
 function htmlTag(tagName, content, attributes, isClosed = true, state = { }) {
 	if (typeof isClosed === 'object') {
@@ -70,16 +71,25 @@ const rules = {
 			};
 		},
 		html: (node, output, state) => {
-			let code;
-			if (node.lang && highlight.getLanguage(node.lang))
-				code = highlight.highlight(node.lang, node.content, true); // Discord seems to set ignore ignoreIllegals: true
-
-			if (code && state.cssModuleNames) // Replace classes in hljs output
-				code.value = code.value.replace(/<span class="([a-z0-9-_ ]+)">/gi, (str, m) =>
-					str.replace(m, m.split(' ').map(cl => state.cssModuleNames[cl] || cl).join(' ')));
+			let codeHtml;
+			let classes = [];
+			if (node.lang && highlight.getLanguage(node.lang) && !state.noHighlightCode) {
+				const code = highlight.highlight(node.lang, node.content, true); // Discord seems to set ignore ignoreIllegals: true
+				if (state.cssModuleNames) // Replace classes in hljs output
+					code.value = code.value.replace(/<span class="([a-z0-9-_ ]+)">/gi, (str, m) =>
+						str.replace(m, m.split(' ').map(cl => state.cssModuleNames[cl] || cl).join(' ')));
+				codeHtml = code.value;
+				classes.push('hljs');
+				if (code.language)
+					classes.push(`language-${code.language}`);
+			} else {
+				codeHtml = escapeHtml(node.content);
+				if (node.lang)
+					classes.push(`language-${node.lang}`);
+			}
 
 			return htmlTag('pre', htmlTag(
-				'code', code ? code.value : node.content, { class: `hljs${code ? ' ' + code.language : ''}` }, state
+				'code', codeHtml, { class: classes.join(' ') }, state
 			), null, state);
 		}
 	}),
@@ -297,6 +307,7 @@ function toHTML(source, ops) {
 		discordCallback: { },
 		cssModuleNames: { },
 		noExtraSpanTags: false,
+		noHighlightCode: false,
 	}, ops || { });
 
 	let _parser = parser;
@@ -315,7 +326,8 @@ function toHTML(source, ops) {
 		escapeHTML: options.escapeHTML,
 		cssModuleNames: options.cssModuleNames,
 		discordCallbacks: Object.assign({ }, discordCallbackDefaults, options.discordCallback),
-		noExtraSpanTags: options.noExtraSpanTags
+		noExtraSpanTags: options.noExtraSpanTags,
+		noHighlightCode: options.noHighlightCode,
 	};
 
 	return _htmlOutput(_parser(source, state), state);
