@@ -119,9 +119,7 @@ const rules = {
 	strike: Object.assign({ }, markdown.defaultRules.del, {
 		match: markdown.inlineRegex(/^~~([\s\S]+?)~~(?!_)/),
 	}),
-	inlineCode: Object.assign({ }, markdown.defaultRules.inlineCode {
-		match: source => source = source.trimEnd(), markdown.defaultRules.inlineCode.match.regex.exec(source)
-	}),
+	inlineCode: markdown.defaultRules.inlineCode,
 	text: Object.assign({ }, markdown.defaultRules.text, {
 		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
 		html: function(node, output, state) {

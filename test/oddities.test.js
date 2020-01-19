@@ -2,7 +2,7 @@ const markdown = require('../index');
 
 test('Unmatched mark', () => {
 	expect(markdown.toHTML('`Inline `code` with extra marker'))
-		.toBe('<code>Inline</code>code` with extra marker');
+		.toBe('<code>Inline </code>code` with extra marker');
 });
 
 test('* next to space', () => {
@@ -18,6 +18,11 @@ test('Triple *s', () => {
 test('Inline code with ` inside', () => {
 	expect(markdown.toHTML('``function test() { return "`" }``'))
 		.toBe('<code>function test() { return &quot;`&quot; }</code>');
+});
+
+test('Inline code with spaces', () => {
+	expect(markdown.toHTML('`   test   `'))
+		.toBe('<code>   test   </code>');
 });
 
 test('Code blocks aren\'t parsed', () => {
