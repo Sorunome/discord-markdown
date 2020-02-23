@@ -1,6 +1,5 @@
 const markdown = require('simple-markdown');
 const highlight = require('highlight.js');
-const escapeHtml = require('escape-html');
 
 function htmlTag(tagName, content, attributes, isClosed = true, state = { }) {
 	if (typeof isClosed === 'object') {
@@ -46,17 +45,8 @@ const rules = {
 			const removeSyntaxRegex = isBlock ? /^ *>>> ?/ : /^ *> ?/gm;
 			const content = all.replace(removeSyntaxRegex, '');
 
-			state.inQuote = true
-			if (!isBlock)
-				state.inline = true;
-
-			const parsed = parse(content, state);
-
-			state.inQuote = state.inQuote || false;
-			state.inline = state.inline || false;
-
 			return {
-				content: parsed,
+				content: parse(content, Object.assign({ }, state, { inQuote: true })),
 				type: 'blockQuote'
 			}
 		}
@@ -71,25 +61,22 @@ const rules = {
 			};
 		},
 		html: (node, output, state) => {
-			let codeHtml;
-			let classes = [];
+			let code;
+			const classes = [];
 			if (node.lang && highlight.getLanguage(node.lang) && !state.noHighlightCode) {
-				const code = highlight.highlight(node.lang, node.content, true); // Discord seems to set ignore ignoreIllegals: true
-				if (state.cssModuleNames) // Replace classes in hljs output
+				code = highlight.highlight(node.lang, node.content, true); // Discord seems to set ignoreIllegals: true
+				if (state.cssModuleNames)
 					code.value = code.value.replace(/<span class="([a-z0-9-_ ]+)">/gi, (str, m) =>
 						str.replace(m, m.split(' ').map(cl => state.cssModuleNames[cl] || cl).join(' ')));
-				codeHtml = code.value;
 				classes.push('hljs');
 				if (code.language)
 					classes.push(`language-${code.language}`);
-			} else {
-				codeHtml = escapeHtml(node.content);
-				if (node.lang)
-					classes.push(`language-${node.lang}`);
+			} else if (node.lang) {
+				classes.push(`language-${node.lang}`);
 			}
 
 			return htmlTag('pre', htmlTag(
-				'code', codeHtml, { class: classes.join(' ') }, state
+				'code', code ? code.value : markdown.sanitizeText(node.content), { class: classes.join(' ') }, state
 			), null, state);
 		}
 	}),
@@ -123,13 +110,23 @@ const rules = {
 			return htmlTag('a', output(node.content, state), { href: markdown.sanitizeUrl(node.target) }, state);
 		}
 	}),
-	em: markdown.defaultRules.em,
+	em: Object.assign({ }, markdown.defaultRules.em, {
+		parse: function(capture, parse, state) {
+			const parsed = markdown.defaultRules.em.parse(capture, parse, Object.assign({ }, state, { inEmphasis: true }));
+			return state.inEmphasis ? parsed.content : parsed;
+		},
+	}),
 	strong: markdown.defaultRules.strong,
 	u: markdown.defaultRules.u,
 	strike: Object.assign({ }, markdown.defaultRules.del, {
 		match: markdown.inlineRegex(/^~~([\s\S]+?)~~(?!_)/),
 	}),
-	inlineCode: markdown.defaultRules.inlineCode,
+	inlineCode: Object.assign({ }, markdown.defaultRules.inlineCode, {
+		match: source => markdown.defaultRules.inlineCode.match.regex.exec(source),
+		html: function(node, output, state) {
+			return htmlTag('code', markdown.sanitizeText(node.content.trim()), null, state);
+		}
+	}),
 	text: Object.assign({ }, markdown.defaultRules.text, {
 		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
 		html: function(node, output, state) {
@@ -323,6 +320,7 @@ function toHTML(source, ops) {
 	const state = {
 		inline: true,
 		inQuote: false,
+		inEmphasis: false,
 		escapeHTML: options.escapeHTML,
 		cssModuleNames: options.cssModuleNames,
 		discordCallbacks: Object.assign({ }, discordCallbackDefaults, options.discordCallback),
