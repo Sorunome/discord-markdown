@@ -117,3 +117,13 @@ test('spoilers are handled correctly', () => {
 	expect(markdown.toHTML('||```\ncode\nblock\n```||'))
 		.toBe('<span class="d-spoiler"><pre><code>code\nblock</code></pre></span>');
 });
+
+test('emoji-codes for non-bots are left untouched', () => {
+	expect(markdown.toHTML(':fox:'))
+		.toBe(':fox:');
+});
+
+test('emoji-codes for bots are converted', () => {
+	expect(markdown.toHTML(':fox:', { isBot: true }))
+		.toBe('🦊');
+});

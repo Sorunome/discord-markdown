@@ -1,5 +1,6 @@
 const markdown = require('simple-markdown');
 const highlight = require('highlight.js');
+const emoji = require("node-emoji");
 
 function htmlTag(tagName, content, attributes, isClosed = true, state = { }) {
 	if (typeof isClosed === 'object') {
@@ -32,6 +33,43 @@ function htmlDiscordTag(content, attributes, state) {
 	if (state.noExtraSpanTags)
 		return content;
 	return htmlTag('span', content, attributes, state);
+}
+
+const rulesUniversal = {
+	emoji: {
+		order: markdown.defaultRules.strong.order,
+		match: (source) => /^:(\w+):/.exec(source),
+		parse: (capture, parse, state) => {
+			const code = capture[1];
+			if (!state.isBot) {
+				return {
+					content: ":" + code + ":",
+				};
+			}
+			let e = emoji.get(code);
+			if (e === ":" + code + ":") {
+				e = emoji.get(code + "_face");
+				if (e === ":" + code + "_face:") {
+					e = ":" + code + ":";
+				}
+			}
+			return {
+				content: e,
+			};
+		},
+		html: (node) => {
+			return markdown.sanitizeText(node.content);
+		},
+	},
+	text: Object.assign({ }, markdown.defaultRules.text, {
+		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
+		html: function(node, output, state) {
+			if (state.escapeHTML)
+				return markdown.sanitizeText(node.content);
+
+			return node.content;
+		}
+	}),
 }
 
 const rules = {
@@ -125,15 +163,6 @@ const rules = {
 		match: source => markdown.defaultRules.inlineCode.match.regex.exec(source),
 		html: function(node, output, state) {
 			return htmlTag('code', markdown.sanitizeText(node.content), null, state);
-		}
-	}),
-	text: Object.assign({ }, markdown.defaultRules.text, {
-		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
-		html: function(node, output, state) {
-			if (state.escapeHTML)
-				return markdown.sanitizeText(node.content);
-
-			return node.content;
 		}
 	}),
 	emoticon: {
@@ -261,18 +290,9 @@ const rulesDiscord = {
 	}
 };
 Object.assign(rules, rulesDiscord);
+Object.assign(rules, rulesUniversal);
 
-const rulesDiscordOnly = Object.assign({ }, rulesDiscord, {
-	text: Object.assign({ }, markdown.defaultRules.text, {
-		match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00c0-\uffff-]|\n\n|\n|\w+:\S|$)/.exec(source),
-		html: function(node, output, state) {
-			if (state.escapeHTML)
-				return markdown.sanitizeText(node.content);
-
-			return node.content;
-		}
-	})
-});
+const rulesDiscordOnly = Object.assign({ }, rulesDiscord, rulesUniversal);
 
 
 const rulesEmbed = Object.assign({ }, rules, {
@@ -299,6 +319,7 @@ const htmlOutputEmbed = markdown.htmlFor(markdown.ruleOutput(rulesEmbed, 'html')
 function toHTML(source, ops) {
 	const options = Object.assign({
 		embed: false,
+		isBot: false,
 		escapeHTML: true,
 		discordOnly: false,
 		discordCallback: { },
@@ -321,6 +342,7 @@ function toHTML(source, ops) {
 		inline: true,
 		inQuote: false,
 		inEmphasis: false,
+		isBot: options.isBot,
 		escapeHTML: options.escapeHTML,
 		cssModuleNames: options.cssModuleNames,
 		discordCallbacks: Object.assign({ }, discordCallbackDefaults, options.discordCallback),
