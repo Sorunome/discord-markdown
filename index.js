@@ -124,7 +124,7 @@ const rules = {
 	inlineCode: Object.assign({ }, markdown.defaultRules.inlineCode, {
 		match: source => markdown.defaultRules.inlineCode.match.regex.exec(source),
 		html: function(node, output, state) {
-			return htmlTag('code', markdown.sanitizeText(node.content.trim()), null, state);
+			return htmlTag('code', markdown.sanitizeText(node.content), null, state);
 		}
 	}),
 	text: Object.assign({ }, markdown.defaultRules.text, {
